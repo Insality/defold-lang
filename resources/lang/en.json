@@ -1,0 +1,8 @@
+{
+	"ui_hello": "Hello, World!",
+	"ui_goodbye": "Goodbye, World!",
+	"ui_welcome": "Welcome to the world!",
+	"ui_what": "What is your name?",
+	"ui_params": "Hello, %s",
+	"ui_random": "String 1\nString 2\nString 3"
+}

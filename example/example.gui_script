@@ -1,0 +1,19 @@
+local lang = require("lang.lang")
+
+function init(self)
+	lang.init()
+
+	print(lang.txt("ui_hello"))
+	print(lang.txt("ui_goodbye"))
+	print(lang.txp("ui_params", "User"))
+	print(lang.txr("ui_random"))
+
+	print(lang.is_exist("ui_hello"))
+	pprint(lang.get_langs())
+
+	lang.set_lang("ru")
+	print(lang.txt("ui_hello"))
+	print(lang.txt("ui_goodbye"))
+	print(lang.txp("ui_params", "User"))
+	print(lang.txr("ui_random"))
+end

@@ -1,0 +1,8 @@
+{
+	"ui_hello": "¡Hola, Mundo!",
+	"ui_goodbye": "¡Adiós, Mundo!",
+	"ui_welcome": "¡Bienvenido!",
+	"ui_what": "¿Qué es esto?",
+	"ui_params": "Hola, %s",
+	"ui_random": "Línea 1\nLínea 2\nLínea 3"
+}

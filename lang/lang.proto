@@ -1,0 +1,7 @@
+syntax = "proto3"
+
+package lang
+
+message state {
+	string lang = 1;
+}
