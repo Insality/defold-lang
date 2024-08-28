@@ -1,0 +1,83 @@
+local json = require("editor_script.json")
+local utf8 = require("editor_script.utf8")
+
+local M = {}
+
+local function ends_with(str, ending)
+	return ending == "" or str:sub(-#ending) == ending
+end
+
+
+---Collect all characters used in key-value json string values
+local function acquire_user_characters(json_path)
+	local json_content = editor.get(json_path, "text")
+	local json_data = json.decode(json_content)
+
+	local symbols = {}
+	for key, value in pairs(json_data) do
+		if type(value) == "string" then
+			for i = 1, #value do
+				--local char = value:sub(i, i)
+				local char = utf8.sub(value, i, i)
+				if not symbols[char] then
+					symbols[char] = true
+				end
+			end
+		end
+	end
+
+	return symbols
+end
+
+
+function M.get_commands()
+	return {
+		{
+			label = "Acquire unique characters",
+
+			locations = { "Assets" },
+
+			query = {
+				selection = { type = "resource", cardinality = "many" }
+			},
+
+			active = function(opts)
+				for index = 1, #opts.selection do
+					local path = editor.get(opts.selection[index], "path")
+					if not ends_with(path, ".json") then
+						return false
+					end
+				end
+
+				return true
+			end,
+
+			run = function(opts)
+				local symbols = {}
+
+				for index = 1, #opts.selection do
+					local path = editor.get(opts.selection[index], "path")
+					local json_symbols = acquire_user_characters(path)
+
+					for char, _ in pairs(json_symbols) do
+						if not symbols[char] then
+							symbols[char] = true
+						end
+					end
+				end
+
+				local unique_chars = {}
+				for char, _ in pairs(symbols) do
+					table.insert(unique_chars, char)
+				end
+				table.sort(unique_chars)
+
+				print("Unique characters:")
+				print(table.concat(unique_chars))
+			end
+		}
+	}
+end
+
+
+return M
