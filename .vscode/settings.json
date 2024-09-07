@@ -28,6 +28,7 @@
 		"timer",
 		"socket",
 		"assert_equal",
-		"sys"
+		"sys",
+		"editor"
 	]
 }
