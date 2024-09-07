@@ -70,7 +70,7 @@ function M.set_lang(lang)
 	local lang_data = lang_internal.load_json(lang_path)
 
 	if not lang_data then
-		lang_internal.logger:error("Can't load lang file", { path = lang_path })
+		lang_internal.logger:error("Can't load lang file by path", lang_path)
 		return false
 	end
 

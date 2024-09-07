@@ -49,7 +49,7 @@ function M.get_commands()
 					end
 				end
 
-				return true
+				return #opts.selection > 0
 			end,
 
 			run = function(opts)
