@@ -43,6 +43,7 @@ M.reset_state()
 function M.init()
 	local is_inited = M.set_lang(M.state.lang)
 	if not is_inited then
+		lang_internal.logger:warn("Current language not found. Set to default", lang_internal.DEFAULT_LANG)
 		M.set_lang(lang_internal.DEFAULT_LANG)
 	end
 end
