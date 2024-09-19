@@ -1,7 +1,14 @@
-local json = require("editor_script.json")
-local utf8 = require("editor_script.utf8")
+local json = require("lang.editor_script.json")
+local utf8 = require("lang.editor_script.utf8")
 
 local M = {}
+
+local IGNORE_CHARACTERS = {
+	["\n"] = true,
+	["\r"] = true,
+	["\t"] = true,
+	[" "] = true,
+}
 
 local function ends_with(str, ending)
 	return ending == "" or str:sub(-#ending) == ending
@@ -18,7 +25,7 @@ local function acquire_user_characters(json_path)
 		if type(value) == "string" then
 			for i = 1, #value do
 				local char = utf8.sub(value, i, i)
-				if not symbols[char] then
+				if not symbols[char] and not IGNORE_CHARACTERS[char] then
 					symbols[char] = true
 				end
 			end
@@ -73,6 +80,7 @@ function M.get_commands()
 
 				print("Unique characters:")
 				print(table.concat(unique_chars))
+				print("")
 			end
 		}
 	}

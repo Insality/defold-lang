@@ -99,3 +99,10 @@ function init(self)
 	--...
 end
 ```
+
+
+## Use Editor Script to collect unique characters
+
+If you want to get the set of characters used in your localization, you can use the Lang Editor Script. To use it, select the JSON files, right-click, and choose 'Acquire Unique Characters'. Then, copy the unique characters to your font settings (in the 'Character' or 'Extra Characters' field).
+
+![Unique Characters](media/acquire_characters.png)

@@ -24,10 +24,10 @@
 
 Open your `game.project` file and add the following line to the dependencies field under the project section:
 
-**[Lang v1](https://github.com/Insality/defold-lang/archive/refs/tags/1.zip)**
+**[Lang](https://github.com/Insality/defold-lang/archive/refs/tags/2.zip)**
 
 ```
-https://github.com/Insality/defold-lang/archive/refs/tags/1.zip
+https://github.com/Insality/defold-lang/archive/refs/tags/2.zip
 ```
 
 After that, select `Project ▸ Fetch Libraries` to update [library dependencies]((https://defold.com/manuals/libraries/#setting-up-library-dependencies)). This happens automatically whenever you open a project so you will only need to do this if the dependencies change without re-opening the project.
@@ -133,6 +133,22 @@ For any issues, questions, or suggestions, please [create an issue](https://gith
 <a href="https://github.com/Insality/defold-lang/graphs/contributors">
   <img src="https://contributors-img.web.app/image?repo=insality/defold-lang"/>
 </a>
+
+## Changelog
+
+### **V1**
+<details>
+	<summary><b>Changelog</b></summary>
+
+	- Initial release
+</details>
+
+### **V2**
+<details>
+	<summary><b>Changelog</b></summary>
+
+	- Add Defold Editor Script to collect unique characters from selected JSON files
+</details>
 
 
 ## ❤️ Support project ❤️
