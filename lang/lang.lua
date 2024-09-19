@@ -43,7 +43,6 @@ M.reset_state()
 function M.init()
 	local is_inited = M.set_lang(M.state.lang)
 	if not is_inited then
-		lang_internal.logger:warn("Can't load lang file, set default lang", M.state.lang)
 		M.set_lang(lang_internal.DEFAULT_LANG)
 	end
 end
@@ -71,6 +70,10 @@ function M.set_lang(lang)
 
 	if not is_parsed then
 		lang_internal.logger:error("Can't load or parse lang file. Check the JSON file is valid", lang_path)
+		return false
+	end
+	if not lang_data then
+		lang_internal.logger:error("Lang file not found", lang_path)
 		return false
 	end
 
