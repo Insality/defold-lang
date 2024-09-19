@@ -67,10 +67,10 @@ function M.set_lang(lang)
 	end
 
 	local lang_path = lang_internal.LOCALES_PATH .. lang .. ".json"
-	local lang_data = lang_internal.load_json(lang_path)
+	local is_parsed, lang_data = pcall(lang_internal.load_json, lang_path)
 
-	if not lang_data then
-		lang_internal.logger:error("Can't load lang file by path", lang_path)
+	if not is_parsed then
+		lang_internal.logger:error("Can't load or parse lang file. Check the JSON file is valid", lang_path)
 		return false
 	end
 
