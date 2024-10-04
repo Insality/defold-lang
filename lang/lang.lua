@@ -50,7 +50,7 @@ end
 
 
 ---Set logger for lang module. Pass nil to use empty logger
----@param logger_instance lang.logger|nil
+---@param logger_instance lang.logger|table|nil
 function M.set_logger(logger_instance)
 	lang_internal.logger = logger_instance or lang_internal.empty_logger
 end
@@ -88,21 +88,28 @@ function M.set_lang(lang)
 end
 
 
----Set next language from list
----@return string @next language code
+---Set next language from lang list and return it's code
+---@return string @The new language code after change
 function M.set_next_lang()
+	M.set_lang(M.get_next_lang())
+
+	return M.get_lang()
+end
+
+
+---Get next language from lang list and return it's code
+---@return string @next language code
+function M.get_next_lang()
 	local current_lang = M.get_lang()
 	local all_langs = M.get_langs()
 	local current_index = lang_internal.index_of(all_langs, current_lang) or 1
 
-	current_index = current_index + 1
-	if current_index > #all_langs then
-		current_index = 1
+	local next_index = current_index + 1
+	if next_index > #all_langs then
+		next_index = 1
 	end
 
-	M.set_lang(all_langs[current_index])
-
-	return all_langs[current_index]
+	return all_langs[next_index]
 end
 
 

@@ -73,6 +73,19 @@ return function()
 			assert(lang_name == "en")
 		end)
 
+		it("Should get next lang before change", function()
+			local lang_name = lang.get_next_lang()
+			assert(lang_name == "ru")
+
+			lang.set_lang(lang_name)
+			lang_name = lang.get_next_lang()
+			assert(lang_name == "es")
+
+			lang.set_lang(lang_name)
+			lang_name = lang.get_next_lang()
+			assert(lang_name == "en")
+		end)
+
 		it("Should txr return random text", function()
 			local text = lang.txr("ui_random")
 			assert_equal(text, "String 1" or text == "String 2" or text == "String 3")
