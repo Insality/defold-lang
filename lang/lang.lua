@@ -43,14 +43,14 @@ M.reset_state()
 function M.init()
 	local is_inited = M.set_lang(M.state.lang)
 	if not is_inited then
-		lang_internal.logger:warn("Can't load lang file, set default lang", M.state.lang)
+		lang_internal.logger:warn("Current language not found. Set to default", lang_internal.DEFAULT_LANG)
 		M.set_lang(lang_internal.DEFAULT_LANG)
 	end
 end
 
 
 ---Set logger for lang module. Pass nil to use empty logger
----@param logger_instance lang.logger|nil
+---@param logger_instance lang.logger|table|nil
 function M.set_logger(logger_instance)
 	lang_internal.logger = logger_instance or lang_internal.empty_logger
 end
@@ -67,10 +67,14 @@ function M.set_lang(lang)
 	end
 
 	local lang_path = lang_internal.LOCALES_PATH .. lang .. ".json"
-	local lang_data = lang_internal.load_json(lang_path)
+	local is_parsed, lang_data = pcall(lang_internal.load_json, lang_path)
 
+	if not is_parsed then
+		lang_internal.logger:error("Can't load or parse lang file. Check the JSON file is valid", lang_path)
+		return false
+	end
 	if not lang_data then
-		lang_internal.logger:error("Can't load lang file by path", lang_path)
+		lang_internal.logger:error("Lang file not found", lang_path)
 		return false
 	end
 
@@ -84,21 +88,28 @@ function M.set_lang(lang)
 end
 
 
----Set next language from list
----@return string @next language code
+---Set next language from lang list and return it's code
+---@return string @The new language code after change
 function M.set_next_lang()
+	M.set_lang(M.get_next_lang())
+
+	return M.get_lang()
+end
+
+
+---Get next language from lang list and return it's code
+---@return string @next language code
+function M.get_next_lang()
 	local current_lang = M.get_lang()
 	local all_langs = M.get_langs()
 	local current_index = lang_internal.index_of(all_langs, current_lang) or 1
 
-	current_index = current_index + 1
-	if current_index > #all_langs then
-		current_index = 1
+	local next_index = current_index + 1
+	if next_index > #all_langs then
+		next_index = 1
 	end
 
-	M.set_lang(all_langs[current_index])
-
-	return all_langs[current_index]
+	return all_langs[next_index]
 end
 
 

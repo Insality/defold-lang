@@ -95,6 +95,7 @@ lang.set_lang(lang_id)
 lang.get_lang()
 lang.get_langs()
 lang.set_next_lang()
+lang.get_next_lang()
 lang.txt(text_id)
 lang.txp(text_id, ...)
 lang.txr(text_id)
@@ -136,18 +137,18 @@ For any issues, questions, or suggestions, please [create an issue](https://gith
 
 ## Changelog
 
-### **V1**
 <details>
-	<summary><b>Changelog</b></summary>
 
+### **V1**
 	- Initial release
-</details>
 
 ### **V2**
-<details>
-	<summary><b>Changelog</b></summary>
-
 	- Add Defold Editor Script to collect unique characters from selected JSON files
+
+### **V3**
+	- Add `lang.get_next_lang()` function
+	- Better error messages
+
 </details>
 
 

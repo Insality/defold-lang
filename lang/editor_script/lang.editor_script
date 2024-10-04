@@ -24,7 +24,6 @@ local function acquire_user_characters(json_path)
 	for key, value in pairs(json_data) do
 		if type(value) == "string" then
 			for i = 1, #value do
-				--local char = value:sub(i, i)
 				local char = utf8.sub(value, i, i)
 				if not symbols[char] and not IGNORE_CHARACTERS[char] then
 					symbols[char] = true

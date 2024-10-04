@@ -29,6 +29,7 @@
 		"socket",
 		"assert_equal",
 		"sys",
-		"editor"
+		"editor",
+		"http"
 	]
 }
