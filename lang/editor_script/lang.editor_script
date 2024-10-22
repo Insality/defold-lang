@@ -66,9 +66,7 @@ function M.get_commands()
 					local json_symbols = acquire_user_characters(path)
 
 					for char, _ in pairs(json_symbols) do
-						if not symbols[char] then
-							symbols[char] = true
-						end
+						symbols[char] = true
 					end
 				end
 
