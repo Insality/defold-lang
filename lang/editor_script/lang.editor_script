@@ -7,7 +7,6 @@ local IGNORE_CHARACTERS = {
 	["\n"] = true,
 	["\r"] = true,
 	["\t"] = true,
-	[" "] = true,
 }
 
 local function ends_with(str, ending)
@@ -40,13 +39,8 @@ function M.get_commands()
 	return {
 		{
 			label = "Acquire unique characters",
-
 			locations = { "Assets" },
-
-			query = {
-				selection = { type = "resource", cardinality = "many" }
-			},
-
+			query = { selection = { type = "resource", cardinality = "many" } },
 			active = function(opts)
 				for index = 1, #opts.selection do
 					local path = editor.get(opts.selection[index], "path")
@@ -66,9 +60,7 @@ function M.get_commands()
 					local json_symbols = acquire_user_characters(path)
 
 					for char, _ in pairs(json_symbols) do
-						if not symbols[char] then
-							symbols[char] = true
-						end
+						symbols[char] = true
 					end
 				end
 
@@ -78,7 +70,8 @@ function M.get_commands()
 				end
 				table.sort(unique_chars)
 
-				print("Unique characters:")
+				print("Unique characters, count", #unique_chars)
+				print("Copy next line and set it as characters property in your font asset")
 				print(table.concat(unique_chars))
 				print("")
 			end
