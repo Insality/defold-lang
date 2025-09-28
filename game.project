@@ -22,3 +22,6 @@ dependencies#0 = https://github.com/britzl/deftest/archive/master.zip
 [library]
 include_dirs = lang
 
+[html5]
+splash_image = /media/logo_thumb.png
+
