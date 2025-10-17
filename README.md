@@ -49,7 +49,7 @@ Initialize the **Lang** module by calling `lang.init()` with your language confi
 ```lua
 local lang = require("lang.lang")
 
--- Initialize with language files
+-- Basic initialization with language files
 lang.init({
 	{ id = "en", path = "/resources/lang/en.json" },
 	{ id = "ru", path = "/resources/lang/ru.json" },
@@ -57,19 +57,20 @@ lang.init({
 })
 ```
 
-You can also force a specific language on initialization:
+#### Force Language on Start
+
+You can force a specific language on initialization:
 
 ```lua
--- Force a specific language on start
+-- Force Spanish language on start
 lang.init({
 	{ id = "en", path = "/resources/lang/en.json" },
 	{ id = "ru", path = "/resources/lang/ru.json" },
 	{ id = "es", path = "/resources/lang/es.json" },
-}, "es") -- Force Spanish language
+}, "es")
 ```
 
-
-### Default Language
+#### Language Selection Priority
 
 **Defold Lang** selects the language to use in the following priority order:
 
@@ -80,16 +81,14 @@ lang.init({
 
 The first language in the configuration array serves as the ultimate fallback. Defold uses the two-character [ISO-639 format](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes) for language codes ("en", "ru", "es", etc).
 
-The module uses `sys.load_resource` to load the files. Place your files inside your [custom resources folder](https://defold.com/manuals/project-settings/#custom-resources) to ensure they are included in the build.
+> **Note:** Place your language files inside your [custom resources folder](https://defold.com/manuals/project-settings/#custom-resources) to ensure they are included in the build.
 
 
 ### Localization Files
 
-**Defold Lang** supports three file formats: **JSON**, **Lua**, and **CSV**. Each format has its own advantages:
+**Defold Lang** supports three file formats: **JSON**, **Lua**, and **CSV**.
 
 #### JSON Files
-JSON files use a simple key-value structure:
-
 ```json
 {
 	"ui_hello_world": "Hello, World!",
@@ -99,18 +98,7 @@ JSON files use a simple key-value structure:
 }
 ```
 
-Initialize with JSON files:
-```lua
-lang.init({
-	{ id = "en", path = "/locales/en.json" },
-	{ id = "ru", path = "/locales/ru.json" },
-	{ id = "es", path = "/locales/es.json" },
-})
-```
-
 #### Lua Files
-Lua files return a table with translations:
-
 ```lua
 -- en.lua
 return {
@@ -121,18 +109,7 @@ return {
 }
 ```
 
-Initialize with Lua files:
-```lua
-lang.init({
-	{ id = "en", path = require("locales.en") },
-	{ id = "ru", path = require("locales.ru") },
-	{ id = "es", path = require("locales.es") },
-})
-```
-
 #### CSV Files
-CSV files allow multiple languages in a single file. The first column contains keys, and subsequent columns contain translations:
-
 ```csv
 key,en,ru,es
 ui_hello_world,"Hello, World!","Привет, мир!","¡Hola, mundo!"
@@ -141,26 +118,60 @@ ui_settings,Settings,Настройки,Configuración
 ui_exit,Exit,Выход,Salir
 ```
 
-Initialize with CSV files (specify column names as language IDs):
-```lua
-lang.init({
-	{ id = "en", path = "/locales/translations.csv" },
-	{ id = "ru", path = "/locales/translations.csv" },
-	{ id = "es", path = "/locales/translations.csv" },
-})
-```
-
 #### Mixed Format Example
-You can even mix different file formats:
+You can mix different file formats in a single configuration:
 
 ```lua
 lang.init({
 	{ id = "en", path = "/resources/lang/en.json" },
-	{ id = "ru", path = "/resources/lang/ru.lua" },
+	{ id = "ru", path = require("resources.lang.ru") },
 	{ id = "es", path = "/resources/lang/translations.csv" },
 })
 ```
 
+### Load from Bundle Resources
+
+#### Async Loading with Custom Loaders
+
+For loading from bundle resources (file I/O or HTTP), you can provide a custom loader function:
+
+```lua
+-- Custom async loader for bundle resources, HTTP loading, etc.
+lang.init({
+	{
+		id = "en",
+		path = "/bundle/lang/en.json",
+		loader = function(path, on_success, on_error)
+			-- Your custom loading logic here
+			-- Call on_success(content) with file content string
+			-- Or on_error(error_message) on failure
+
+			-- Example: Bundle resource loading
+			local app_path = sys.get_application_path()
+			local full_path = app_path .. path
+			local f = io.open(full_path, "rb")
+			if f then
+				local content = f:read("*a")
+				f:close()
+				on_success(content)
+			else
+				on_error("File not found: " .. full_path)
+			end
+		end
+	},
+})
+
+-- Language switching with callback
+lang.set_lang("en", function()
+	print("Language loaded!")
+	print(lang.txt("ui_hello"))
+	druid.on_language_change()
+end)
+```
+
+**Use cases for bundle resource loading:**
+- Bundle resources loading (file I/O or HTTP)
+- Platform-specific resource access
 
 ## API Reference
 
@@ -168,7 +179,7 @@ lang.init({
 
 ```lua
 lang.init(available_langs, [lang_on_start])
-lang.set_lang(lang_id)
+lang.set_lang(lang_id, [on_lang_changed])
 lang.get_lang()
 lang.get_langs()
 lang.set_next_lang()
