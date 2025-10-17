@@ -23,6 +23,7 @@ local M = {}
 ---@class lang.data
 ---@field path string|table Lua table, json or csv path, ex: "/resources/lang/en.json", "/resources/lang/en.csv"
 ---@field id string Language code, ex: "en". If csv file, it's a header name
+---@field loader function|nil Optional async loader function with signature: loader(path, on_success, on_error)
 
 ---Current language translations
 ---@type table<string, string> Contains all current language translations. Key - lang id, Value - translation
@@ -91,10 +92,8 @@ function M.init(available_langs, lang_on_start)
 	end
 
 	-- Get system language if no specific language is requested
-	local system_lang = lang_internal.SYSTEM_LANG
-	if not is_lang_available(system_lang) then
-		system_lang = nil
-	end
+	local system_lang_raw = lang_internal.SYSTEM_LANG
+	local system_lang = is_lang_available(system_lang_raw) and system_lang_raw or nil
 
 	-- Determine target language with validation
 	local target_lang = lang_on_start or M.state.lang or system_lang or default_lang
@@ -119,37 +118,75 @@ function M.set_logger(logger_instance)
 end
 
 
+---Parse and apply language content
+---@private
+---@param content string File content
+---@param lang_id string Language code
+---@param is_csv boolean Is CSV format
+---@param is_json boolean Is JSON format
+---@return boolean success True if successfully applied
+local function parse_and_apply_lang(content, lang_id, is_csv, is_json)
+	if is_csv then
+		local parsed = lang_internal.parse_csv_content(content)
+		if not parsed or not parsed[lang_id] then
+			return false
+		end
+		M.set_lang_table(parsed[lang_id])
+	elseif is_json then
+		local success, result = pcall(json.decode, content)
+		if not success then
+			return false
+		end
+		M.set_lang_table(result)
+	else
+		return false
+	end
+
+	M.state.lang = lang_id
+	return true
+end
+
+
 ---Set current language
 ---@param lang_id string current language code (en, jp, ru, etc.)
----@return boolean is language changed
-function M.set_lang(lang_id)
+---@param on_lang_changed function?
+function M.set_lang(lang_id, on_lang_changed)
 	if not lang_id then
 		lang_internal.logger:error("Language id cannot be nil")
-		return false
+		return
 	end
 
 	local previous_lang = M.state.lang
-	local previous_loaded_lang = previous_lang or nil
-
-	-- Check if language is available using fast lookup
-	if not is_lang_available(lang_id) then
-		lang_internal.logger:error("Lang not found", lang_id)
-		return false
-	end
-
-	-- Get language data using fast lookup
 	local lang_data = get_lang_data(lang_id)
+
 	if not lang_data then
-		lang_internal.logger:error("Lang data not found", lang_id)
-		return false
+		lang_internal.logger:error("Lang not found", lang_id)
+		return
 	end
 
 	local is_lua = type(lang_data.path) == "table"
-	---@type string|nil
 	local path_str = type(lang_data.path) == "string" and lang_data.path --[[@as string]] or nil
-	local is_csv = not is_lua and path_str and string.find(path_str, ".csv")
-	local is_json = not is_lua and path_str and string.find(path_str, ".json")
+	local is_csv = not is_lua and path_str and string.find(path_str, ".csv") ~= nil
+	local is_json = not is_lua and path_str and string.find(path_str, ".json") ~= nil
 
+	-- Async loading with loader
+	if lang_data.loader and path_str then
+		lang_data.loader(path_str, function(content)
+			if parse_and_apply_lang(content, lang_id, is_csv, is_json) then
+				if on_lang_changed then
+					on_lang_changed()
+				end
+				lang_internal.logger:info("Lang changed", { previous_lang = previous_lang, lang = lang_id })
+			else
+				lang_internal.logger:error("Failed to parse lang content", path_str)
+			end
+		end, function(err)
+			lang_internal.logger:error("Failed to load lang file", err)
+		end)
+		return
+	end
+
+	-- Synchronous loading (backward compatibility)
 	if is_lua then
 		M.set_lang_table(lang_data.path)
 		M.state.lang = lang_id
@@ -159,11 +196,13 @@ function M.set_lang(lang_id)
 		M.load_from_json(path_str, lang_id)
 	else
 		lang_internal.logger:error("Lang format not supported", lang_data.path or "unknown")
-		return false
+		return
 	end
 
-	lang_internal.logger:info("Lang changed", { previous_lang = previous_loaded_lang, lang = lang_id })
-	return true
+	lang_internal.logger:info("Lang changed", { previous_lang = previous_lang, lang = lang_id })
+	if on_lang_changed then
+		on_lang_changed()
+	end
 end
 
 
