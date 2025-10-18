@@ -12,6 +12,7 @@
 
 local lang_internal = require("lang.lang_internal")
 local lang_debug_page = require("lang.lang_debug_page")
+local logger = require("lang.internal.lang_logger")
 
 ---@class lang
 local M = {}
@@ -74,7 +75,7 @@ end
 ---@param lang_on_start string? Language code to set on start, override saved language
 function M.init(available_langs, lang_on_start)
 	if not available_langs or #available_langs == 0 then
-		lang_internal.logger:error("No available languages provided to init")
+		logger:error("No available languages provided to init")
 		return
 	end
 
@@ -100,7 +101,7 @@ function M.init(available_langs, lang_on_start)
 
 	-- Validate the target language exists, fallback to default if not
 	if not is_lang_available(target_lang) then
-		lang_internal.logger:warn("Target language not available, falling back to default", {
+		logger:warn("Target language not available, falling back to default", {
 			target_lang = target_lang,
 			default_lang = default_lang
 		})
@@ -114,7 +115,7 @@ end
 ---Set logger for lang module. Pass nil to use empty logger
 ---@param logger_instance lang.logger|table|nil
 function M.set_logger(logger_instance)
-	lang_internal.logger = logger_instance or lang_internal.empty_logger
+	logger.set_logger(logger_instance)
 end
 
 
@@ -152,7 +153,7 @@ end
 ---@param on_lang_changed function?
 function M.set_lang(lang_id, on_lang_changed)
 	if not lang_id then
-		lang_internal.logger:error("Language id cannot be nil")
+		logger:error("Language id cannot be nil")
 		return
 	end
 
@@ -160,7 +161,7 @@ function M.set_lang(lang_id, on_lang_changed)
 	local lang_data = get_lang_data(lang_id)
 
 	if not lang_data then
-		lang_internal.logger:error("Lang not found", lang_id)
+		logger:error("Lang not found", lang_id)
 		return
 	end
 
@@ -176,12 +177,12 @@ function M.set_lang(lang_id, on_lang_changed)
 				if on_lang_changed then
 					on_lang_changed()
 				end
-				lang_internal.logger:info("Lang changed", { previous_lang = previous_lang, lang = lang_id })
+				logger:info("Lang changed", { previous_lang = previous_lang, lang = lang_id })
 			else
-				lang_internal.logger:error("Failed to parse lang content", path_str)
+				logger:error("Failed to parse lang content", path_str)
 			end
 		end, function(err)
-			lang_internal.logger:error("Failed to load lang file", err)
+			logger:error("Failed to load lang file", err)
 		end)
 		return
 	end
@@ -195,11 +196,11 @@ function M.set_lang(lang_id, on_lang_changed)
 	elseif is_json and path_str then
 		M.load_from_json(path_str, lang_id)
 	else
-		lang_internal.logger:error("Lang format not supported", lang_data.path or "unknown")
+		logger:error("Lang format not supported", lang_data.path or "unknown")
 		return
 	end
 
-	lang_internal.logger:info("Lang changed", { previous_lang = previous_lang, lang = lang_id })
+	logger:info("Lang changed", { previous_lang = previous_lang, lang = lang_id })
 	if on_lang_changed then
 		on_lang_changed()
 	end
@@ -216,11 +217,11 @@ function M.load_from_json(lang_path, locale_id)
 
 	local is_parsed, lang_data = pcall(lang_internal.load_json, lang_path)
 	if not is_parsed then
-		lang_internal.logger:error("Can't load or parse lang file. Check the JSON file is valid", lang_path)
+		logger:error("Can't load or parse lang file. Check the JSON file is valid", lang_path)
 		return nil
 	end
 	if not lang_data then
-		lang_internal.logger:error("Lang file not found", lang_path)
+		logger:error("Lang file not found", lang_path)
 		return nil
 	end
 
@@ -241,12 +242,12 @@ function M.load_from_csv(csv_path, locale_id)
 
 	local langs_data = lang_internal.load_csv(csv_path)
 	if not langs_data then
-		lang_internal.logger:error("Can't load or parse lang file. Check the CSV file is valid", csv_path)
+		logger:error("Can't load or parse lang file. Check the CSV file is valid", csv_path)
 		return nil
 	end
 
 	if not langs_data[locale_id] then
-		lang_internal.logger:error("Lang code not found", locale_id)
+		logger:error("Lang code not found", locale_id)
 		return nil
 	end
 

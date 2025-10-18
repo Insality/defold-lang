@@ -1,13 +1,5 @@
 local csv = require("lang.csv")
 
----@class lang.logger
----@field trace fun(logger: lang.logger, message: string, data: any|nil)
----@field debug fun(logger: lang.logger, message: string, data: any|nil)
----@field info fun(logger: lang.logger, message: string, data: any|nil)
----@field warn fun(logger: lang.logger, message: string, data: any|nil)
----@field error fun(logger: lang.logger, message: string, data: any|nil)
-
-
 local M = {}
 
 M.SYSTEM_LANG = sys.get_sys_info().language
@@ -27,28 +19,6 @@ function M.split(s, sep)
 	end
 	return t
 end
-
-
---- Use empty function to save a bit of memory
-local EMPTY_FUNCTION = function(_, message, context) end
-
----@type lang.logger
-M.empty_logger = {
-	trace = EMPTY_FUNCTION,
-	debug = EMPTY_FUNCTION,
-	info = EMPTY_FUNCTION,
-	warn = EMPTY_FUNCTION,
-	error = EMPTY_FUNCTION,
-}
-
----@type lang.logger
-M.logger = {
-	trace = function(_, msg, data) print("TRACE:", msg, data) end,
-	debug = function(_, msg, data) print("DEBUG:", msg, data) end,
-	info = function(_, msg, data) print("INFO:", msg, data) end,
-	warn = function(_, msg, data) print("WARN:", msg, data) end,
-	error = function(_, msg, data) print("ERROR:", msg, data) end
-}
 
 
 ---Load JSON file from game resources folder (by relative path to game.project)
