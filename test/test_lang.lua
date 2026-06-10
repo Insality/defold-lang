@@ -263,6 +263,51 @@ return function()
 			assert_equal(text, "Hola, Usuario")
 		end)
 
+		it("Should load_langs merge translations into current language", function()
+			lang.init({
+				{ id = "en", path = "/resources/lang/en.json" },
+			}, "en")
+
+			assert_equal(lang.txt("ui_pack"), "ui_pack")
+
+			local callback_called = false
+			lang.load_langs("content_windows", {
+				{ id = "en", path = "/resources/lang/en_pack.json" },
+			}, function()
+				callback_called = true
+			end)
+
+			assert(callback_called)
+			assert_equal(lang.txt("ui_hello"), "Hello, World!")
+			assert_equal(lang.txt("ui_pack"), "Pack loaded")
+		end)
+
+		it("Should load_langs add new language from pack", function()
+			lang.init({
+				{ id = "en", path = "/resources/lang/en.json" },
+			}, "en")
+
+			lang.load_langs("content_ru", {
+				{ id = "ru", path = "/resources/lang/ru.json" },
+			})
+
+			assert_equal(#lang.get_langs(), 2)
+			lang.set_lang("ru")
+			assert_equal(lang.txt("ui_hello"), "Привет, Мир!")
+		end)
+
+		it("Should load_langs work with csv format", function()
+			lang.init({
+				{ id = "en", path = "/resources/lang/en.json" },
+			}, "en")
+
+			lang.load_langs("content_csv", {
+				{ id = "en", path = "/resources/lang/translations.csv" },
+			})
+
+			assert_equal(lang.txt("ui_hello"), "Hello, World!")
+		end)
+
 		it("Should handle language switching between formats", function()
 			lang.init({
 				{ id = "en", path = "/resources/lang/en.json" },
