@@ -1,4 +1,4 @@
-local lang_internal = require("lang.lang_internal")
+local lang_internal = require("lang.internal.lang_internal")
 local logger = require("lang.internal.lang_logger")
 
 ---@class lang.registry

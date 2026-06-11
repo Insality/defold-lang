@@ -11,8 +11,8 @@
 --- Use lang.get_langs() to get list of available languages
 --- Use lang.load_langs("pack_id", langs, on_lang_changed) to add locale paths at runtime
 
-local lang_internal = require("lang.lang_internal")
-local lang_registry = require("lang.lang_registry")
+local lang_internal = require("lang.internal.lang_internal")
+local lang_registry = require("lang.internal.lang_registry")
 local lang_debug_page = require("lang.lang_debug_page")
 local logger = require("lang.internal.lang_logger")
 
