@@ -16,12 +16,16 @@ local AVAILABLE_LANGS_MAP = nil
 ---@type table<string, lang.data[]>
 local LANG_PACKS = nil
 
+---@type string[] Pack ids in insertion order, last loaded pack wins on key conflicts
+local LANG_PACKS_ORDER = nil
+
 
 function M.reset()
 	LANG_DICT = {}
 	LANGS_ORDER = {}
 	AVAILABLE_LANGS_MAP = {}
 	LANG_PACKS = {}
+	LANG_PACKS_ORDER = {}
 end
 
 
@@ -55,6 +59,8 @@ function M.setup_langs(available_langs)
 	LANGS_ORDER = {}
 	AVAILABLE_LANGS_MAP = {}
 	LANG_DICT = {}
+	LANG_PACKS = {}
+	LANG_PACKS_ORDER = {}
 
 	for _, lang_data in ipairs(available_langs) do
 		table.insert(LANGS_ORDER, lang_data.id)
@@ -67,6 +73,14 @@ end
 ---@param langs lang.data[]
 function M.add_pack(pack_id, langs)
 	LANG_PACKS[pack_id] = langs
+
+	for index, id in ipairs(LANG_PACKS_ORDER) do
+		if id == pack_id then
+			table.remove(LANG_PACKS_ORDER, index)
+			break
+		end
+	end
+	table.insert(LANG_PACKS_ORDER, pack_id)
 
 	for _, lang_data in ipairs(langs) do
 		if not AVAILABLE_LANGS_MAP[lang_data.id] then
@@ -87,7 +101,8 @@ local function collect_lang_sources(lang_id)
 		table.insert(sources, base)
 	end
 
-	for _, pack_langs in pairs(LANG_PACKS) do
+	for _, pack_id in ipairs(LANG_PACKS_ORDER) do
+		local pack_langs = LANG_PACKS[pack_id]
 		for _, lang_data in ipairs(pack_langs) do
 			if lang_data.id == lang_id then
 				table.insert(sources, lang_data)
@@ -143,27 +158,33 @@ function M.load_lang(lang_id, on_loaded)
 	end
 
 	local pending = #async_sources
+
+	local function on_async_done()
+		pending = pending - 1
+		if pending == 0 then
+			finish()
+		end
+	end
+
 	for _, source in ipairs(async_sources) do
 		local path_str = source.path --[[@as string]]
-		source.loader(path_str, function(content)
+		local loader_ok, loader_err = pcall(source.loader, path_str, function(content)
 			local lang_table = lang_internal.parse_lang_content(content, lang_id, path_str)
 			if lang_table then
 				lang_internal.merge_table(merged, lang_table)
 			else
 				logger:error("Failed to parse lang content", path_str)
 			end
-
-			pending = pending - 1
-			if pending == 0 then
-				finish()
-			end
+			on_async_done()
 		end, function(err)
 			logger:error("Failed to load lang file", err)
-			pending = pending - 1
-			if pending == 0 then
-				finish()
-			end
+			on_async_done()
 		end)
+
+		if not loader_ok then
+			logger:error("Failed to load lang file", loader_err)
+			on_async_done()
+		end
 	end
 end
 

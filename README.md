@@ -179,6 +179,7 @@ end)
 
 ```lua
 lang.init(available_langs, [lang_on_start])
+lang.load_langs(pack_id, langs, [on_lang_changed])
 lang.set_lang(lang_id, [on_lang_changed])
 lang.get_lang()
 lang.get_langs()

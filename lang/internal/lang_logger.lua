@@ -57,16 +57,16 @@ function M.table_to_string(t, depth, result)
 				for _ in pairs(value) do
 					table_len = table_len + 1
 				end
-				result = result .. key .. ": {... #" .. table_len .. "}"
+				result = result .. tostring(key) .. ": {... #" .. table_len .. "}"
 			else
 				local convert_result, is_limit = M.table_to_string(value, depth - 1, "")
-				result = result .. key .. ": {" .. convert_result
+				result = result .. tostring(key) .. ": {" .. convert_result
 				if is_limit then
 					break
 				end
 			end
 		else
-			result = result .. key .. ": " .. tostring(value)
+			result = result .. tostring(key) .. ": " .. tostring(value)
 		end
 	end
 

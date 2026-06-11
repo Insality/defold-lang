@@ -308,6 +308,38 @@ return function()
 			assert_equal(lang.txt("ui_hello"), "Hello, World!")
 		end)
 
+		it("Should init clear previously loaded packs", function()
+			lang.init({
+				{ id = "en", path = "/resources/lang/en.json" },
+			}, "en")
+
+			lang.load_langs("content", {
+				{ id = "en", path = "/resources/lang/en_pack.json" },
+			})
+			assert_equal(lang.txt("ui_pack"), "Pack loaded")
+
+			lang.init({
+				{ id = "en", path = "/resources/lang/en.json" },
+			}, "en")
+			assert_equal(lang.txt("ui_pack"), "ui_pack")
+		end)
+
+		it("Should use last loaded pack on key conflicts", function()
+			lang.init({
+				{ id = "en", path = "/resources/lang/en.json" },
+			}, "en")
+
+			lang.load_langs("pack_a", {
+				{ id = "en", path = "/resources/lang/en_pack_a.json" },
+			})
+			assert_equal(lang.txt("ui_override"), "Pack A")
+
+			lang.load_langs("pack_b", {
+				{ id = "en", path = "/resources/lang/en_pack_b.json" },
+			})
+			assert_equal(lang.txt("ui_override"), "Pack B")
+		end)
+
 		it("Should handle language switching between formats", function()
 			lang.init({
 				{ id = "en", path = "/resources/lang/en.json" },
@@ -373,6 +405,21 @@ return function()
 				end)
 				-- Should handle empty array gracefully
 				assert(success == true or success == false)
+			end)
+
+			it("Should handle throwing loader without hanging", function()
+				local success = pcall(function()
+					lang.init({
+						{
+							id = "en",
+							path = "/resources/lang/en.json",
+							loader = function()
+								error("loader failed")
+							end,
+						},
+					}, "en")
+				end)
+				assert(success)
 			end)
 		end)
 
