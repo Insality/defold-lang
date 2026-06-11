@@ -13,7 +13,6 @@
 
 local lang_internal = require("lang.internal.lang_internal")
 local lang_registry = require("lang.internal.lang_registry")
-local lang_debug_page = require("lang.lang_debug_page")
 local logger = require("lang.internal.lang_logger")
 
 ---@class lang
@@ -222,14 +221,6 @@ end
 ---@return boolean is_available True if language is available
 function M.is_lang_available(lang_id)
 	return lang_registry.is_lang_available(lang_id)
-end
-
-
----Render properties panel for lang module
----@param druid table druid instance
----@param properties_panel table druid properties panel instance
-function M.render_properties_panel(druid, properties_panel)
-	lang_debug_page.render_properties_panel(M, druid, properties_panel)
 end
 
 
