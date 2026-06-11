@@ -122,11 +122,6 @@ function M.load_langs(pack_id, langs, on_lang_changed)
 end
 
 
-function M.set_lang_table(lang_table)
-	lang_registry.set_dict(lang_table)
-end
-
-
 ---Set next language from lang list and return it's code
 ---@return string lang_code The new language code after change
 function M.set_next_lang()

@@ -8,7 +8,6 @@
 - [init](#init)
 - [set_logger](#set_logger)
 - [set_lang](#set_lang)
-- [set_lang_table](#set_lang_table)
 - [set_next_lang](#set_next_lang)
 - [get_next_lang](#get_next_lang)
 - [get_lang](#get_lang)
@@ -77,16 +76,6 @@ Set current language
 
 - **Returns:**
 	- `is` *(boolean)*: language changed
-
-### set_lang_table
-
----
-```lua
-lang.set_lang_table([lang_table])
-```
-
-- **Parameters:**
-	- `[lang_table]` *(any)*:
 
 ### set_next_lang
 
