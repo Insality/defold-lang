@@ -1,6 +1,6 @@
 # lang API
 
-> at lang/lang.lua
+> at /lang/lang.lua
 
 ## Functions
 
@@ -8,6 +8,7 @@
 - [init](#init)
 - [set_logger](#set_logger)
 - [set_lang](#set_lang)
+- [load_langs](#load_langs)
 - [set_next_lang](#set_next_lang)
 - [get_next_lang](#get_next_lang)
 - [get_lang](#get_lang)
@@ -19,12 +20,9 @@
 - [get_langs](#get_langs)
 - [get_lang_table](#get_lang_table)
 - [is_lang_available](#is_lang_available)
-- [render_properties_panel](#render_properties_panel)
-
 ## Fields
 
 - [state](#state)
-- [available_langs](#available_langs)
 
 
 
@@ -44,7 +42,7 @@ Reset module lang state
 lang.init(available_langs, [lang_on_start])
 ```
 
-Initialize lang module
+Call this to initialize lang module
 
 - **Parameters:**
 	- `available_langs` *(lang.data[])*: List of { id = "en", path = "/locales/en.json" }
@@ -66,16 +64,28 @@ Set logger for lang module. Pass nil to use empty logger
 
 ---
 ```lua
-lang.set_lang(lang_id)
+lang.set_lang(lang_id, [on_lang_changed])
 ```
 
 Set current language
 
 - **Parameters:**
 	- `lang_id` *(string)*: current language code (en, jp, ru, etc.)
+	- `[on_lang_changed]` *(function?)*:
 
-- **Returns:**
-	- `is` *(boolean)*: language changed
+### load_langs
+
+---
+```lua
+lang.load_langs(pack_id, langs, [on_lang_changed])
+```
+
+Load additional locale pack and refresh current language
+
+- **Parameters:**
+	- `pack_id` *(string)*: Pack id for future unload
+	- `langs` *(lang.data[])*: List of { id = "en", path = "/locales/en.json" }
+	- `[on_lang_changed]` *(function?)*:
 
 ### set_next_lang
 
@@ -138,7 +148,7 @@ Get translation for text id
 	- `text_id` *(string)*: text id from your localization
 
 - **Returns:**
-	- `Translated` *(string)*: text
+	- `text` *(string)*: ("ui_hello_world") -> "Hello, World!"
 
 ### txr
 
@@ -153,7 +163,7 @@ Get random translation for text id, split by \n symbol
 	- `text_id` *(string)*: text id from your localization
 
 - **Returns:**
-	- `translated` *(string)*: text
+	- `text` *(string)*: ("ui_hint") -> "Hint 1" or "Hint 2" or ...
 
 ### txp
 
@@ -169,7 +179,7 @@ Get translation for text id with params
 	- `...` *(...)*: vararg
 
 - **Returns:**
-	- `Translated` *(string)*: text
+	- `text` *(string)*: ("ui_hello_name", "John") -> "Hello, John!"
 
 ### is_exist
 
@@ -184,7 +194,7 @@ Check is translation with text_id exist
 	- `text_id` *(string)*: text id from your localization
 
 - **Returns:**
-	- `Is` *(boolean)*: translation exist for text_id
+	- `is_exist` *(boolean)*: Is translation exist for text_id
 
 ### get_langs
 
@@ -196,7 +206,7 @@ lang.get_langs()
 Return list of available languages
 
 - **Returns:**
-	- `List` *(string[])*: of available languages
+	- `langs` *(string[])*: List of available languages
 
 ### get_lang_table
 
@@ -205,10 +215,10 @@ Return list of available languages
 lang.get_lang_table()
 ```
 
-Get lang table
+Get current lang table { key = "value" }
 
 - **Returns:**
-	- `` *(table<string, string>)*:
+	- `lang_table` *(table<string, string>)*:
 
 ### is_lang_available
 
@@ -223,24 +233,10 @@ Check if language is available
 	- `lang_id` *(string)*: Language code to check
 
 - **Returns:**
-	- `True` *(boolean)*: if language is available
-
-### render_properties_panel
-
----
-```lua
-lang.render_properties_panel(druid, properties_panel)
-```
-
-- **Parameters:**
-	- `druid` *(table)*: druid instance
-	- `properties_panel` *(table)*: druid properties panel instance
+	- `is_available` *(boolean)*: True if language is available
 
 
 ## Fields
 <a name="state"></a>
 - **state** (_nil_):  Persistent storage
-
-<a name="available_langs"></a>
-- **available_langs** (_nil_): List of available languages
 

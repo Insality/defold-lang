@@ -15,6 +15,8 @@
 
 - **Handy API** - Simple and easy to use API
 - **Multiple File Formats** - Support for JSON, Lua, and CSV language files
+- **Runtime Locale Packs** - Load additional translations at runtime with `lang.load_langs()`
+- **Async Loading** - Custom loader functions for bundle resources, HTTP, and other I/O
 - **Saver Support** - Save current selected language in [Defold-Saver](https://github.com/Insality/defold-saver)
 - **Druid Support** - Easy [Druid](https://github.com/Insality/druid) integration
 
@@ -24,10 +26,10 @@
 
 Open your `game.project` file and add the following line to the dependencies field under the project section:
 
-**[Lang](https://github.com/Insality/defold-lang/archive/refs/tags/4.zip)**
+**[Lang](https://github.com/Insality/defold-lang/archive/refs/tags/5.zip)**
 
 ```
-https://github.com/Insality/defold-lang/archive/refs/tags/4.zip
+https://github.com/Insality/defold-lang/archive/refs/tags/5.zip
 ```
 
 After that, select `Project ▸ Fetch Libraries` to update [library dependencies]((https://defold.com/manuals/libraries/#setting-up-library-dependencies)). This happens automatically whenever you open a project so you will only need to do this if the dependencies change without re-opening the project.
@@ -169,9 +171,34 @@ lang.set_lang("en", function()
 end)
 ```
 
-**Use cases for bundle resource loading:**
+**Use cases for custom loaders:**
 - Bundle resources loading (file I/O or HTTP)
 - Platform-specific resource access
+
+### Runtime Locale Packs
+
+Load additional locale files at runtime with `lang.load_langs()`. Translations from a pack are merged into the current language. If the same key exists in multiple packs, the last loaded pack wins. Calling `lang.init()` clears all previously loaded packs.
+
+```lua
+-- Base languages at startup
+lang.init({
+	{ id = "en", path = "/resources/lang/en.json" },
+})
+
+-- Load DLC or platform-specific translations
+lang.load_langs("dlc_1", {
+	{ id = "en", path = "/bundle/lang/dlc_en.json" },
+	{ id = "ru", path = "/bundle/lang/dlc_ru.json" },
+}, function()
+	druid.on_language_change()
+end)
+
+-- Add a new language from a pack
+lang.load_langs("content_ru", {
+	{ id = "ru", path = "/resources/lang/ru.json" },
+})
+lang.set_lang("ru")
+```
 
 ## API Reference
 
@@ -265,6 +292,15 @@ For any issues, questions, or suggestions, please [create an issue](https://gith
 	- Add CSV file support
 	- Updated editor script to collect unique characters from selected JSON and CSV files
 	- Add Lang debug properties page for Druid properties panel
+
+### **V5**
+	- [Breaking] Removed `lang.set_lang_table()` function
+	- [Breaking] Removed `lang.render_properties_panel()` function
+	- [Breaking] `lang.set_lang()` no longer returns boolean, now accepts optional `on_lang_changed` callback
+	- Add `lang.load_langs()` for loading additional locale packs at runtime
+	- Add async loading support via custom `loader` function in language config
+	- Internal refactor: moved internal modules to `lang/internal/` subfolder
+	- Updated logger
 
 </details>
 
