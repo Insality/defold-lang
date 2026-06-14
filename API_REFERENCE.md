@@ -91,13 +91,16 @@ Load additional locale pack and refresh current language
 
 ---
 ```lua
-lang.set_next_lang()
+lang.set_next_lang([on_lang_changed])
 ```
 
 Set next language from lang list and return it's code
 
+- **Parameters:**
+	- `[on_lang_changed]` *(function?)*:
+
 - **Returns:**
-	- `lang_code` *(string)*: The new language code after change
+	- `lang_code` *(string)*: The language code being switched to
 
 ### get_next_lang
 

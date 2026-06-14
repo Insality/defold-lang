@@ -123,11 +123,12 @@ end
 
 
 ---Set next language from lang list and return it's code
----@return string lang_code The new language code after change
-function M.set_next_lang()
-	M.set_lang(M.get_next_lang())
-
-	return M.get_lang()
+---@param on_lang_changed function?
+---@return string lang_code The language code being switched to
+function M.set_next_lang(on_lang_changed)
+	local next_lang = M.get_next_lang()
+	M.set_lang(next_lang, on_lang_changed)
+	return next_lang
 end
 
 
