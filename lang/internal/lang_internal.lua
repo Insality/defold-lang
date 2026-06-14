@@ -40,36 +40,7 @@ end
 ---@param csv_content string CSV content as string
 ---@return table|nil data Table with language data or nil if error
 function M.parse_csv_content(csv_content)
-	local data = {}
-	local f = csv.openstring(csv_content)
-	local headers = nil
-
-	-- Parse headers, first id is a lang_id to table <lang<locale_id, translate>>
-	for fields in f:lines() do
-		if not headers then
-			-- First row contains language codes
-			headers = fields
-			-- Initialize language tables
-			for i = 2, #headers do
-				data[headers[i]] = {}
-			end
-		else
-			-- Process data rows
-			local key = fields[1] -- First column is the translation key
-			if key then
-				-- Add translations for each language
-				for i = 2, #headers do
-					if fields[i] then
-						-- Process escape sequences in the field value
-						local value = fields[i]:gsub("\\n", "\n"):gsub("\\t", "\t"):gsub("\\r", "\r")
-						data[headers[i]][key] = value
-					end
-				end
-			end
-		end
-	end
-
-	return data
+	return csv.parse_content(csv_content)
 end
 
 
