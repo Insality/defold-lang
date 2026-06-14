@@ -176,6 +176,10 @@ end
 ---@return string text ("ui_hint") -> "Hint 1" or "Hint 2" or ...
 function M.txr(text_id)
 	local dict = lang_registry.get_dict()
+	if not dict[text_id] then
+		return text_id
+	end
+
 	local texts = lang_internal.split(dict[text_id], "\n")
 	return texts[math.random(1, #texts)]
 end

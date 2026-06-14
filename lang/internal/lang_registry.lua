@@ -5,26 +5,22 @@ local logger = require("lang.internal.lang_logger")
 local M = {}
 
 ---@type table<string, string>
-local LANG_DICT = nil
+local LANG_DICT = {}
 
 ---@type string[]
-local LANGS_ORDER = nil
+local LANGS_ORDER = {}
 
----@type table<string, lang.data>
-local AVAILABLE_LANGS_MAP = nil
-
----@type table<string, lang.data[]>
-local LANG_PACKS = nil
+---@type table<string, { data: lang.data, pack_id: string|nil }[]>
+local LANG_SOURCES = {}
 
 ---@type string[] Pack ids in insertion order, last loaded pack wins on key conflicts
-local LANG_PACKS_ORDER = nil
+local LANG_PACKS_ORDER = {}
 
 
 function M.reset()
 	LANG_DICT = {}
 	LANGS_ORDER = {}
-	AVAILABLE_LANGS_MAP = {}
-	LANG_PACKS = {}
+	LANG_SOURCES = {}
 	LANG_PACKS_ORDER = {}
 end
 
@@ -32,12 +28,6 @@ end
 ---@return table<string, string>
 function M.get_dict()
 	return LANG_DICT
-end
-
-
----@param dict table<string, string>
-function M.set_dict(dict)
-	LANG_DICT = dict
 end
 
 
@@ -50,21 +40,17 @@ end
 ---@param lang_id string
 ---@return boolean
 function M.is_lang_available(lang_id)
-	return AVAILABLE_LANGS_MAP[lang_id] ~= nil
+	return LANG_SOURCES[lang_id] ~= nil
 end
 
 
 ---@param available_langs lang.data[]
 function M.setup_langs(available_langs)
-	LANGS_ORDER = {}
-	AVAILABLE_LANGS_MAP = {}
-	LANG_DICT = {}
-	LANG_PACKS = {}
-	LANG_PACKS_ORDER = {}
+	M.reset()
 
 	for _, lang_data in ipairs(available_langs) do
 		table.insert(LANGS_ORDER, lang_data.id)
-		AVAILABLE_LANGS_MAP[lang_data.id] = lang_data
+		LANG_SOURCES[lang_data.id] = { { data = lang_data, pack_id = nil } }
 	end
 end
 
@@ -72,7 +58,13 @@ end
 ---@param pack_id string
 ---@param langs lang.data[]
 function M.add_pack(pack_id, langs)
-	LANG_PACKS[pack_id] = langs
+	for _, entries in pairs(LANG_SOURCES) do
+		for index = #entries, 1, -1 do
+			if entries[index].pack_id == pack_id then
+				table.remove(entries, index)
+			end
+		end
+	end
 
 	for index, id in ipairs(LANG_PACKS_ORDER) do
 		if id == pack_id then
@@ -83,69 +75,38 @@ function M.add_pack(pack_id, langs)
 	table.insert(LANG_PACKS_ORDER, pack_id)
 
 	for _, lang_data in ipairs(langs) do
-		if not AVAILABLE_LANGS_MAP[lang_data.id] then
-			AVAILABLE_LANGS_MAP[lang_data.id] = { id = lang_data.id }
+		if not LANG_SOURCES[lang_data.id] then
+			LANG_SOURCES[lang_data.id] = {}
 			table.insert(LANGS_ORDER, lang_data.id)
 		end
+		table.insert(LANG_SOURCES[lang_data.id], { data = lang_data, pack_id = pack_id })
 	end
-end
-
-
----@param lang_id string
----@return lang.data[]
-local function collect_lang_sources(lang_id)
-	local sources = {}
-	local base = AVAILABLE_LANGS_MAP[lang_id]
-
-	if base and base.path then
-		table.insert(sources, base)
-	end
-
-	for _, pack_id in ipairs(LANG_PACKS_ORDER) do
-		local pack_langs = LANG_PACKS[pack_id]
-		for _, lang_data in ipairs(pack_langs) do
-			if lang_data.id == lang_id then
-				table.insert(sources, lang_data)
-			end
-		end
-	end
-
-	return sources
 end
 
 
 ---@param lang_id string
 ---@param on_loaded function?
 function M.load_lang(lang_id, on_loaded)
-	local sources = collect_lang_sources(lang_id)
+	local entries = LANG_SOURCES[lang_id]
+	if not entries or #entries == 0 then
+		logger:error("Lang not found", lang_id)
+		return
+	end
+
+	local sources = {}
+	for _, entry in ipairs(entries) do
+		if entry.data.path then
+			sources[#sources + 1] = entry.data
+		end
+	end
+
 	if #sources == 0 then
 		logger:error("Lang not found", lang_id)
 		return
 	end
 
-	local merged = {}
-	local async_sources = {}
-
-	for _, source in ipairs(sources) do
-		local is_lua, path_str, is_csv, is_json = lang_internal.get_path_format(source.path)
-		if source.loader and path_str then
-			table.insert(async_sources, source)
-		else
-			local lang_table = lang_internal.load_lang_table_from_source(source, lang_id)
-			if lang_table then
-				lang_internal.merge_table(merged, lang_table)
-			elseif source.path then
-				if is_lua or is_csv or is_json then
-					logger:error("Failed to load lang file", path_str or source.path)
-				else
-					logger:error("Lang format not supported", source.path)
-				end
-			end
-		end
-	end
-
-	local function finish()
-		if not next(merged) then
+	lang_internal.load_lang_sources(sources, lang_id, function(merged)
+		if not merged then
 			logger:error("Failed to load lang", lang_id)
 			return
 		end
@@ -154,42 +115,7 @@ function M.load_lang(lang_id, on_loaded)
 		if on_loaded then
 			on_loaded(lang_id)
 		end
-	end
-
-	if #async_sources == 0 then
-		finish()
-		return
-	end
-
-	local pending = #async_sources
-
-	local function on_async_done()
-		pending = pending - 1
-		if pending == 0 then
-			finish()
-		end
-	end
-
-	for _, source in ipairs(async_sources) do
-		local path_str = source.path --[[@as string]]
-		local loader_ok, loader_err = pcall(source.loader, path_str, function(content)
-			local lang_table = lang_internal.parse_lang_content(content, lang_id, path_str)
-			if lang_table then
-				lang_internal.merge_table(merged, lang_table)
-			else
-				logger:error("Failed to parse lang content", path_str)
-			end
-			on_async_done()
-		end, function(err)
-			logger:error("Failed to load lang file", err)
-			on_async_done()
-		end)
-
-		if not loader_ok then
-			logger:error("Failed to load lang file", loader_err)
-			on_async_done()
-		end
-	end
+	end)
 end
 
 
