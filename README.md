@@ -311,9 +311,12 @@ For any issues, questions, or suggestions, please [create an issue](https://gith
 	- [Breaking] Removed `lang.render_properties_panel()` function
 	- [Breaking] `lang.set_lang()` no longer returns boolean, now accepts optional `on_lang_changed` callback
 	- Add `lang.load_langs()` for loading additional locale packs at runtime
+	- Add `lang.on_lang_changed` global callback when translations are loaded
+	- Add `lang.get_state()` and `lang.set_state()` functions
+	- Add optional callback to `lang.set_next_lang()` and `lang.load_langs()`
 	- Add async loading support via custom `loader` function in language config
 	- Internal refactor: moved internal modules to `lang/internal/` subfolder
-	- Updated logger
+	- Updated README and example project
 
 </details>
 
