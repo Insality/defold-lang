@@ -4,6 +4,6 @@ function init(self)
 	deftest.add(require("test.test_lang"))
 	deftest.add(require("test.test_lang_internal"))
 
-	local is_report = (sys.get_config("test.report") == "1")
+	local is_report = (sys.get_config_int("test.report") == 1)
 	deftest.run({ coverage = { enabled = is_report } })
 end

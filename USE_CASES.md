@@ -2,6 +2,26 @@
 
 This section provides examples of how to use the `lang` module.
 
+## Language changed callback
+
+Set `lang.on_lang_changed` once at startup. It runs after translations are loaded — on every `set_lang`, `set_next_lang`, and `load_langs`:
+
+```lua
+local lang = require("lang.lang")
+
+lang.on_lang_changed = function()
+	-- refresh UI, update labels, etc.
+end
+```
+
+Per-call callbacks still work and run before the global one:
+
+```lua
+lang.set_lang("fr", function()
+	print("Switched to French")
+end)
+```
+
 ## Druid Lang Text Integration
 
 To use lang module with [Druid](https://github.com/Insality/druid), you can use next integration:
@@ -41,7 +61,7 @@ local function init_saver(self)
 
 	saver.init()
 	-- After saver.init add lang state to the saver
-	saver.bind_game_state("lang", lang.state)
+	saver.bind_game_state("lang", lang.get_state())
 end
 
 local function init_lang(self)
@@ -65,8 +85,18 @@ If you use another save system, you can save the current language somewhere. Set
 ```lua
 -- Save current somewhere lang id via `lang.get_lang()` and update it on language change in your game
 local current_lang = get_current_language_from_save()
-lang.state.lang = current_lang
+
+lang.set_state({ lang = current_lang })
 lang.init()
+```
+
+Or just force that language on `lang.init()`
+```lua
+local current_lang = get_current_language_from_save()
+
+lang.init({
+	{ id = "en", path = "/resources/lang/en.json" },
+}, current_lang)
 ```
 
 

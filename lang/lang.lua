@@ -9,11 +9,16 @@
 --- Use lang.txp("key", "param1", "param2") to get translation with params (Use %s in translation)
 --- Use lang.is_exist("key") to check is translation exist
 --- Use lang.get_langs() to get list of available languages
+--- Use lang.load_langs("pack_id", langs, on_lang_changed) to add locale paths at runtime
+--- Use lang.on_lang_changed to set global callback when language changes
 
-local lang_internal = require("lang.lang_internal")
-local lang_debug_page = require("lang.lang_debug_page")
+local lang_internal = require("lang.internal.lang_internal")
+local lang_registry = require("lang.internal.lang_registry")
+local logger = require("lang.internal.lang_logger")
 
 ---@class lang
+---@field state lang.state
+---@field on_lang_changed function Called after translations are loaded
 local M = {}
 
 
@@ -21,51 +26,17 @@ local M = {}
 ---@field lang string current language name (en, jp, ru, etc.)
 
 ---@class lang.data
----@field path string|table Lua table, json or csv path, ex: "/resources/lang/en.json", "/resources/lang/en.csv"
+---@field path string|table|nil Lua table, json or csv path, ex: "/resources/lang/en.json", "/resources/lang/en.csv"
 ---@field id string Language code, ex: "en". If csv file, it's a header name
-
----Current language translations
----@type table<string, string> Contains all current language translations. Key - lang id, Value - translation
-local LANG_DICT = nil
+---@field loader function|nil Optional async loader function with signature: loader(path, on_success, on_error)
 
 -- Persistent storage
 ---@type lang.state
 M.state = nil
 
----Order of available languages
----@type lang.data[] In order
-local LANGS_ORDER = nil
-
----Map of available languages for fast lookup
----@type table<string, lang.data> Key is language id, value is lang.data
-local AVAILABLE_LANGS_MAP = nil
-
----Reset module lang state
-function M.reset_state()
-	M.state = {
-		lang = lang_internal.SYSTEM_LANG,
-	}
-	LANG_DICT = {}
-	LANGS_ORDER = {}
-	AVAILABLE_LANGS_MAP = {}
-end
-M.reset_state()
-
-
----Check if language exists in available languages
----@param lang_id string Language code to check
----@return boolean True if language exists
-local function is_lang_available(lang_id)
-	return AVAILABLE_LANGS_MAP[lang_id] ~= nil
-end
-
-
----Get language data by id
----@param lang_id string Language code
----@return lang.data|nil Language data or nil if not found
-local function get_lang_data(lang_id)
-	return AVAILABLE_LANGS_MAP[lang_id]
-end
+---Global callback after language is loaded and translations are ready.
+---Called by `set_lang`, `set_next_lang`, and `load_langs`. Set once at startup to refresh UI.
+M.on_lang_changed = function() end
 
 
 ---Call this to initialize lang module
@@ -73,35 +44,19 @@ end
 ---@param lang_on_start string? Language code to set on start, override saved language
 function M.init(available_langs, lang_on_start)
 	if not available_langs or #available_langs == 0 then
-		lang_internal.logger:error("No available languages provided to init")
+		logger:error("No available languages provided to init")
 		return
 	end
 
-	-- Clear previous language data
-	LANGS_ORDER = {}
-	AVAILABLE_LANGS_MAP = {}
-	LANG_DICT = {}
+	lang_registry.setup_langs(available_langs)
 
-	-- Build available languages list and map
-	local default_lang = nil
-	for index, lang_data in ipairs(available_langs) do
-		table.insert(LANGS_ORDER, lang_data.id)
-		AVAILABLE_LANGS_MAP[lang_data.id] = lang_data
-		default_lang = default_lang or lang_data.id
-	end
-
-	-- Get system language if no specific language is requested
-	local system_lang = lang_internal.SYSTEM_LANG
-	if not is_lang_available(system_lang) then
-		system_lang = nil
-	end
-
-	-- Determine target language with validation
+	local default_lang = available_langs[1].id
+	local system_lang_raw = lang_internal.SYSTEM_LANG
+	local system_lang = lang_registry.is_lang_available(system_lang_raw) and system_lang_raw or nil
 	local target_lang = lang_on_start or M.state.lang or system_lang or default_lang
 
-	-- Validate the target language exists, fallback to default if not
-	if not is_lang_available(target_lang) then
-		lang_internal.logger:warn("Target language not available, falling back to default", {
+	if not lang_registry.is_lang_available(target_lang) then
+		logger:warn("Target language not available, falling back to default", {
 			target_lang = target_lang,
 			default_lang = default_lang
 		})
@@ -112,123 +67,61 @@ function M.init(available_langs, lang_on_start)
 end
 
 
----Set logger for lang module. Pass nil to use empty logger
----@param logger_instance lang.logger|table|nil
-function M.set_logger(logger_instance)
-	lang_internal.logger = logger_instance or lang_internal.empty_logger
+---Load additional locale pack and refresh current language
+---@param pack_id string Pack id for future unload
+---@param langs lang.data[] List of { id = "en", path = "/locales/en.json" }
+---@param on_lang_changed function?
+function M.load_langs(pack_id, langs, on_lang_changed)
+	if not pack_id then
+		logger:error("Pack id cannot be nil")
+		return
+	end
+
+	if not langs or #langs == 0 then
+		logger:error("No languages provided to load_langs")
+		return
+	end
+
+	lang_registry.add_pack(pack_id, langs)
+	M.set_lang(M.state.lang, on_lang_changed)
 end
 
 
 ---Set current language
 ---@param lang_id string current language code (en, jp, ru, etc.)
----@return boolean is language changed
-function M.set_lang(lang_id)
+---@param on_lang_changed function?
+function M.set_lang(lang_id, on_lang_changed)
 	if not lang_id then
-		lang_internal.logger:error("Language id cannot be nil")
-		return false
+		logger:error("Language id cannot be nil")
+		return
+	end
+
+	if not lang_registry.is_lang_available(lang_id) then
+		logger:error("Lang not found", lang_id)
+		return
 	end
 
 	local previous_lang = M.state.lang
-	local previous_loaded_lang = previous_lang or nil
-
-	-- Check if language is available using fast lookup
-	if not is_lang_available(lang_id) then
-		lang_internal.logger:error("Lang not found", lang_id)
-		return false
-	end
-
-	-- Get language data using fast lookup
-	local lang_data = get_lang_data(lang_id)
-	if not lang_data then
-		lang_internal.logger:error("Lang data not found", lang_id)
-		return false
-	end
-
-	local is_lua = type(lang_data.path) == "table"
-	---@type string|nil
-	local path_str = type(lang_data.path) == "string" and lang_data.path --[[@as string]] or nil
-	local is_csv = not is_lua and path_str and string.find(path_str, ".csv")
-	local is_json = not is_lua and path_str and string.find(path_str, ".json")
-
-	if is_lua then
-		M.set_lang_table(lang_data.path)
-		M.state.lang = lang_id
-	elseif is_csv and path_str then
-		M.load_from_csv(path_str, lang_id)
-	elseif is_json and path_str then
-		M.load_from_json(path_str, lang_id)
-	else
-		lang_internal.logger:error("Lang format not supported", lang_data.path or "unknown")
-		return false
-	end
-
-	lang_internal.logger:info("Lang changed", { previous_lang = previous_loaded_lang, lang = lang_id })
-	return true
-end
-
-
----Load lang from json file
----@private
----@param lang_path string path to lang file
----@param locale_id string? locale id
----@return table<string, string>? result lang data or false if error
-function M.load_from_json(lang_path, locale_id)
-	locale_id = locale_id or M.state.lang or lang_internal.SYSTEM_LANG
-
-	local is_parsed, lang_data = pcall(lang_internal.load_json, lang_path)
-	if not is_parsed then
-		lang_internal.logger:error("Can't load or parse lang file. Check the JSON file is valid", lang_path)
-		return nil
-	end
-	if not lang_data then
-		lang_internal.logger:error("Lang file not found", lang_path)
-		return nil
-	end
-
-	M.set_lang_table(lang_data)
-	M.state.lang = locale_id
-
-	return lang_data
-end
-
-
----Load lang from csv file
----@private
----@param csv_path string path to csv file
----@param locale_id string? lang code, default is last used lang
----@return table<string, string>? result lang data or false if error
-function M.load_from_csv(csv_path, locale_id)
-	locale_id = locale_id or M.state.lang or lang_internal.SYSTEM_LANG
-
-	local langs_data = lang_internal.load_csv(csv_path)
-	if not langs_data then
-		lang_internal.logger:error("Can't load or parse lang file. Check the CSV file is valid", csv_path)
-		return nil
-	end
-
-	if not langs_data[locale_id] then
-		lang_internal.logger:error("Lang code not found", locale_id)
-		return nil
-	end
-
-	M.set_lang_table(langs_data[locale_id])
-	M.state.lang = locale_id
-
-	return langs_data[locale_id]
-end
-
-
-function M.set_lang_table(lang_table)
-	LANG_DICT = lang_table
+	lang_registry.load_lang(lang_id, function(loaded_lang_id)
+		M.state.lang = loaded_lang_id
+		logger:info("Lang changed", { previous_lang = previous_lang, lang = loaded_lang_id })
+		if on_lang_changed then
+			on_lang_changed()
+		end
+		if M.on_lang_changed then
+			M.on_lang_changed()
+		end
+	end)
 end
 
 
 ---Set next language from lang list and return it's code
----@return string lang_code The new language code after change
-function M.set_next_lang()
-	M.set_lang(M.get_next_lang())
-
-	return M.get_lang()
+---@param on_lang_changed function?
+---@return string lang_code The language code being switched to
+function M.set_next_lang(on_lang_changed)
+	local next_lang = M.get_next_lang()
+	M.set_lang(next_lang, on_lang_changed)
+	return next_lang
 end
 
 
@@ -255,10 +148,10 @@ function M.get_lang()
 end
 
 
----Get default language
----@return string Default language code
-function M.get_default_lang()
-	return lang_internal.SYSTEM_LANG
+---Return list of available languages
+---@return string[] langs List of available languages
+function M.get_langs()
+	return lang_registry.get_langs_order()
 end
 
 
@@ -266,16 +159,8 @@ end
 ---@param text_id string text id from your localization
 ---@return string text ("ui_hello_world") -> "Hello, World!"
 function M.txt(text_id)
-	return LANG_DICT[text_id] or text_id or ""
-end
-
-
----Get random translation for text id, split by \n symbol
----@param text_id string text id from your localization
----@return string text ("ui_hint") -> "Hint 1" or "Hint 2" or ...
-function M.txr(text_id)
-	local texts = lang_internal.split(LANG_DICT[text_id], "\n")
-	return texts[math.random(1, #texts)]
+	local dict = lang_registry.get_dict()
+	return dict[text_id] or text_id or ""
 end
 
 
@@ -288,25 +173,69 @@ function M.txp(text_id, ...)
 end
 
 
+---Get random translation for text id, split by \n symbol
+---@param text_id string text id from your localization
+---@return string text ("ui_hint") -> "Hint 1" or "Hint 2" or ...
+function M.txr(text_id)
+	local dict = lang_registry.get_dict()
+	if not dict[text_id] then
+		return text_id
+	end
+
+	local texts = lang_internal.split(dict[text_id], "\n")
+	return texts[math.random(1, #texts)]
+end
+
+
 ---Check is translation with text_id exist
 ---@param text_id string text id from your localization
 ---@return boolean is_exist Is translation exist for text_id
 function M.is_exist(text_id)
-	return (not not LANG_DICT[text_id])
+	return (not not lang_registry.get_dict()[text_id])
 end
 
 
----Return list of available languages
----@return string[] langs List of available languages
-function M.get_langs()
-	return LANGS_ORDER
+---Set logger for lang module. Pass nil to use empty logger
+---@param logger_instance lang.logger|table|nil
+function M.set_logger(logger_instance)
+	logger.set_logger(logger_instance)
+end
+
+
+---Reset module lang state
+function M.reset_state()
+	M.state = {
+		lang = lang_internal.SYSTEM_LANG,
+	}
+	lang_registry.reset()
+end
+
+
+---Get lang module state
+---@return lang.state state
+function M.get_state()
+	return M.state
+end
+
+
+---Set lang module state
+---@param state lang.state
+function M.set_state(state)
+	M.state = state
+end
+
+
+---Get default language
+---@return string Default language code
+function M.get_default_lang()
+	return lang_internal.SYSTEM_LANG
 end
 
 
 ---Get current lang table { key = "value" }
 ---@return table<string, string> lang_table
 function M.get_lang_table()
-	return LANG_DICT
+	return lang_registry.get_dict()
 end
 
 
@@ -314,16 +243,10 @@ end
 ---@param lang_id string Language code to check
 ---@return boolean is_available True if language is available
 function M.is_lang_available(lang_id)
-	return is_lang_available(lang_id)
+	return lang_registry.is_lang_available(lang_id)
 end
 
 
----Render properties panel for lang module
----@param druid table druid instance
----@param properties_panel table druid properties panel instance
-function M.render_properties_panel(druid, properties_panel)
-	lang_debug_page.render_properties_panel(M, druid, properties_panel)
-end
-
+M.reset_state()
 
 return M

@@ -3,7 +3,7 @@ return function()
 
 	describe("Defold Lang", function()
 		before(function()
-			lang_internal = require("lang.lang_internal")
+			lang_internal = require("lang.internal.lang_internal")
 		end)
 
 		it("Test index_of", function()

@@ -263,6 +263,83 @@ return function()
 			assert_equal(text, "Hola, Usuario")
 		end)
 
+		it("Should load_langs merge translations into current language", function()
+			lang.init({
+				{ id = "en", path = "/resources/lang/en.json" },
+			}, "en")
+
+			assert_equal(lang.txt("ui_pack"), "ui_pack")
+
+			local callback_called = false
+			lang.load_langs("content_windows", {
+				{ id = "en", path = "/resources/lang/en_pack.json" },
+			}, function()
+				callback_called = true
+			end)
+
+			assert(callback_called)
+			assert_equal(lang.txt("ui_hello"), "Hello, World!")
+			assert_equal(lang.txt("ui_pack"), "Pack loaded")
+		end)
+
+		it("Should load_langs add new language from pack", function()
+			lang.init({
+				{ id = "en", path = "/resources/lang/en.json" },
+			}, "en")
+
+			lang.load_langs("content_ru", {
+				{ id = "ru", path = "/resources/lang/ru.json" },
+			})
+
+			assert_equal(#lang.get_langs(), 2)
+			lang.set_lang("ru")
+			assert_equal(lang.txt("ui_hello"), "Привет, Мир!")
+		end)
+
+		it("Should load_langs work with csv format", function()
+			lang.init({
+				{ id = "en", path = "/resources/lang/en.json" },
+			}, "en")
+
+			lang.load_langs("content_csv", {
+				{ id = "en", path = "/resources/lang/translations.csv" },
+			})
+
+			assert_equal(lang.txt("ui_hello"), "Hello, World!")
+		end)
+
+		it("Should init clear previously loaded packs", function()
+			lang.init({
+				{ id = "en", path = "/resources/lang/en.json" },
+			}, "en")
+
+			lang.load_langs("content", {
+				{ id = "en", path = "/resources/lang/en_pack.json" },
+			})
+			assert_equal(lang.txt("ui_pack"), "Pack loaded")
+
+			lang.init({
+				{ id = "en", path = "/resources/lang/en.json" },
+			}, "en")
+			assert_equal(lang.txt("ui_pack"), "ui_pack")
+		end)
+
+		it("Should use last loaded pack on key conflicts", function()
+			lang.init({
+				{ id = "en", path = "/resources/lang/en.json" },
+			}, "en")
+
+			lang.load_langs("pack_a", {
+				{ id = "en", path = "/resources/lang/en_pack_a.json" },
+			})
+			assert_equal(lang.txt("ui_override"), "Pack A")
+
+			lang.load_langs("pack_b", {
+				{ id = "en", path = "/resources/lang/en_pack_b.json" },
+			})
+			assert_equal(lang.txt("ui_override"), "Pack B")
+		end)
+
 		it("Should handle language switching between formats", function()
 			lang.init({
 				{ id = "en", path = "/resources/lang/en.json" },
@@ -328,6 +405,21 @@ return function()
 				end)
 				-- Should handle empty array gracefully
 				assert(success == true or success == false)
+			end)
+
+			it("Should handle throwing loader without hanging", function()
+				local success = pcall(function()
+					lang.init({
+						{
+							id = "en",
+							path = "/resources/lang/en.json",
+							loader = function()
+								error("loader failed")
+							end,
+						},
+					}, "en")
+				end)
+				assert(success)
 			end)
 		end)
 
