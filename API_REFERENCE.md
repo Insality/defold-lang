@@ -25,6 +25,7 @@
 ## Fields
 
 - [state](#state)
+- [on_lang_changed](#on_lang_changed)
 
 
 
@@ -267,5 +268,8 @@ Check if language is available
 
 ## Fields
 <a name="state"></a>
-- **state** (_nil_):  Persistent storage
+- **state** (_lang.state_)
+
+<a name="on_lang_changed"></a>
+- **on_lang_changed** (_function_): Called after translations are loaded
 

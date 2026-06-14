@@ -2,6 +2,26 @@
 
 This section provides examples of how to use the `lang` module.
 
+## Language changed callback
+
+Set `lang.on_lang_changed` once at startup. It runs after translations are loaded — on every `set_lang`, `set_next_lang`, and `load_langs`:
+
+```lua
+local lang = require("lang.lang")
+
+lang.on_lang_changed = function()
+	-- refresh UI, update labels, etc.
+end
+```
+
+Per-call callbacks still work and run before the global one:
+
+```lua
+lang.set_lang("fr", function()
+	print("Switched to French")
+end)
+```
+
 ## Druid Lang Text Integration
 
 To use lang module with [Druid](https://github.com/Insality/druid), you can use next integration:

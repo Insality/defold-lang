@@ -10,12 +10,15 @@
 --- Use lang.is_exist("key") to check is translation exist
 --- Use lang.get_langs() to get list of available languages
 --- Use lang.load_langs("pack_id", langs, on_lang_changed) to add locale paths at runtime
+--- Use lang.on_lang_changed to set global callback when language changes
 
 local lang_internal = require("lang.internal.lang_internal")
 local lang_registry = require("lang.internal.lang_registry")
 local logger = require("lang.internal.lang_logger")
 
 ---@class lang
+---@field state lang.state
+---@field on_lang_changed function Called after translations are loaded
 local M = {}
 
 
@@ -30,6 +33,10 @@ local M = {}
 -- Persistent storage
 ---@type lang.state
 M.state = nil
+
+---Global callback after language is loaded and translations are ready.
+---Called by `set_lang`, `set_next_lang`, and `load_langs`. Set once at startup to refresh UI.
+M.on_lang_changed = function() end
 
 
 ---Call this to initialize lang module
@@ -100,6 +107,9 @@ function M.set_lang(lang_id, on_lang_changed)
 		logger:info("Lang changed", { previous_lang = previous_lang, lang = loaded_lang_id })
 		if on_lang_changed then
 			on_lang_changed()
+		end
+		if M.on_lang_changed then
+			M.on_lang_changed()
 		end
 	end)
 end

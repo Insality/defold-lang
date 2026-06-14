@@ -131,15 +131,17 @@ print(lang.txt("ui_hello_world"))        -- "Hello, World!"
 -- Text with parameters (%s in the translation)
 print(lang.txp("ui_hello_name", "John")) -- "Hello, John!"
 
--- Switch language
-lang.set_lang("ko", function()
-	print(lang.txt("ui_hello_world"))     -- "안녕하세요, 세계!"
-	druid.on_language_change()            -- refresh UI if using Druid
-end)
+-- Refresh UI when language changes
+lang.on_lang_changed = function()
+	druid.on_language_change()
+end
 
--- Cycle through languages
+-- Switch language
+lang.set_lang("fr")
 lang.set_next_lang()
 ```
+
+Per-call callbacks in `set_lang`, `set_next_lang`, and `load_langs` still work — they run before `lang.on_lang_changed`.
 
 
 ### 4. Add translations at runtime
@@ -222,6 +224,9 @@ lang.txt(text_id)
 lang.txp(text_id, ...)
 lang.txr(text_id)
 lang.is_exist(text_id)
+
+-- Callback
+lang.on_lang_changed
 
 -- System
 lang.set_logger([logger])
