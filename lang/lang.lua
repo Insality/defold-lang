@@ -32,16 +32,6 @@ local M = {}
 M.state = nil
 
 
----Reset module lang state
-function M.reset_state()
-	M.state = {
-		lang = lang_internal.SYSTEM_LANG,
-	}
-	lang_registry.reset()
-end
-M.reset_state()
-
-
 ---Call this to initialize lang module
 ---@param available_langs lang.data[] List of { id = "en", path = "/locales/en.json" }
 ---@param lang_on_start string? Language code to set on start, override saved language
@@ -70,10 +60,23 @@ function M.init(available_langs, lang_on_start)
 end
 
 
----Set logger for lang module. Pass nil to use empty logger
----@param logger_instance lang.logger|table|nil
-function M.set_logger(logger_instance)
-	logger.set_logger(logger_instance)
+---Load additional locale pack and refresh current language
+---@param pack_id string Pack id for future unload
+---@param langs lang.data[] List of { id = "en", path = "/locales/en.json" }
+---@param on_lang_changed function?
+function M.load_langs(pack_id, langs, on_lang_changed)
+	if not pack_id then
+		logger:error("Pack id cannot be nil")
+		return
+	end
+
+	if not langs or #langs == 0 then
+		logger:error("No languages provided to load_langs")
+		return
+	end
+
+	lang_registry.add_pack(pack_id, langs)
+	M.set_lang(M.state.lang, on_lang_changed)
 end
 
 
@@ -99,26 +102,6 @@ function M.set_lang(lang_id, on_lang_changed)
 			on_lang_changed()
 		end
 	end)
-end
-
-
----Load additional locale pack and refresh current language
----@param pack_id string Pack id for future unload
----@param langs lang.data[] List of { id = "en", path = "/locales/en.json" }
----@param on_lang_changed function?
-function M.load_langs(pack_id, langs, on_lang_changed)
-	if not pack_id then
-		logger:error("Pack id cannot be nil")
-		return
-	end
-
-	if not langs or #langs == 0 then
-		logger:error("No languages provided to load_langs")
-		return
-	end
-
-	lang_registry.add_pack(pack_id, langs)
-	M.set_lang(M.state.lang, on_lang_changed)
 end
 
 
@@ -155,10 +138,10 @@ function M.get_lang()
 end
 
 
----Get default language
----@return string Default language code
-function M.get_default_lang()
-	return lang_internal.SYSTEM_LANG
+---Return list of available languages
+---@return string[] langs List of available languages
+function M.get_langs()
+	return lang_registry.get_langs_order()
 end
 
 
@@ -168,6 +151,15 @@ end
 function M.txt(text_id)
 	local dict = lang_registry.get_dict()
 	return dict[text_id] or text_id or ""
+end
+
+
+---Get translation for text id with params
+---@param text_id string Text id from your localization
+---@vararg string|number Params for translation
+---@return string text ("ui_hello_name", "John") -> "Hello, John!"
+function M.txp(text_id, ...)
+	return string.format(M.txt(text_id), ...)
 end
 
 
@@ -185,15 +177,6 @@ function M.txr(text_id)
 end
 
 
----Get translation for text id with params
----@param text_id string Text id from your localization
----@vararg string|number Params for translation
----@return string text ("ui_hello_name", "John") -> "Hello, John!"
-function M.txp(text_id, ...)
-	return string.format(M.txt(text_id), ...)
-end
-
-
 ---Check is translation with text_id exist
 ---@param text_id string text id from your localization
 ---@return boolean is_exist Is translation exist for text_id
@@ -202,10 +185,40 @@ function M.is_exist(text_id)
 end
 
 
----Return list of available languages
----@return string[] langs List of available languages
-function M.get_langs()
-	return lang_registry.get_langs_order()
+---Set logger for lang module. Pass nil to use empty logger
+---@param logger_instance lang.logger|table|nil
+function M.set_logger(logger_instance)
+	logger.set_logger(logger_instance)
+end
+
+
+---Reset module lang state
+function M.reset_state()
+	M.state = {
+		lang = lang_internal.SYSTEM_LANG,
+	}
+	lang_registry.reset()
+end
+
+
+---Get lang module state
+---@return lang.state state
+function M.get_state()
+	return M.state
+end
+
+
+---Set lang module state
+---@param state lang.state
+function M.set_state(state)
+	M.state = state
+end
+
+
+---Get default language
+---@return string Default language code
+function M.get_default_lang()
+	return lang_internal.SYSTEM_LANG
 end
 
 
@@ -223,5 +236,7 @@ function M.is_lang_available(lang_id)
 	return lang_registry.is_lang_available(lang_id)
 end
 
+
+M.reset_state()
 
 return M

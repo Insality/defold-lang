@@ -41,7 +41,7 @@ local function init_saver(self)
 
 	saver.init()
 	-- After saver.init add lang state to the saver
-	saver.bind_game_state("lang", lang.state)
+	saver.bind_game_state("lang", lang.get_state())
 end
 
 local function init_lang(self)
@@ -65,8 +65,18 @@ If you use another save system, you can save the current language somewhere. Set
 ```lua
 -- Save current somewhere lang id via `lang.get_lang()` and update it on language change in your game
 local current_lang = get_current_language_from_save()
-lang.state.lang = current_lang
+
+lang.set_state({ lang = current_lang })
 lang.init()
+```
+
+Or just force that language on `lang.init()`
+```lua
+local current_lang = get_current_language_from_save()
+
+lang.init({
+	{ id = "en", path = "/resources/lang/en.json" },
+}, current_lang)
 ```
 
 
