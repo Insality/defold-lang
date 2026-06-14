@@ -1,5 +1,5 @@
 [bootstrap]
-main_collection = /test/test.collectionc
+main_collection = /example/example.collectionc
 
 [script]
 shared_state = 1
@@ -16,8 +16,11 @@ title = Defold Lang
 version = 5
 publisher = Insality
 developer = Maksim Tuprikov, Insality
-custom_resources = /resources
+custom_resources = /resources,/example/locales
 dependencies#0 = https://github.com/britzl/deftest/archive/master.zip
+dependencies#1 = https://github.com/Insality/asset-store/archive/refs/tags/3.zip
+dependencies#2 = https://github.com/Insality/defold-event/archive/refs/tags/16.zip
+dependencies#3 = https://github.com/Insality/druid/archive/refs/tags/1.2.4.zip
 
 [library]
 include_dirs = lang
