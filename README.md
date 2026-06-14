@@ -33,6 +33,16 @@ https://github.com/Insality/defold-lang/archive/refs/tags/5.zip
 After that, select `Project ▸ Fetch Libraries` to update [library dependencies](https://defold.com/manuals/libraries/#setting-up-library-dependencies). This happens automatically whenever you open a project so you will only need to do this if the dependencies change without re-opening the project.
 
 
+### Library Size
+
+> **Note:** The library size is calculated based on the build report per platform
+
+| Platform         | Library Size |
+| ---------------- | ------------ |
+| HTML5            | **5.54 KB**  |
+| Desktop / Mobile | **8.89 KB**  |
+
+
 ## Quick Start
 
 ### 1. Prepare translation files
@@ -138,10 +148,15 @@ end
 
 -- Switch language
 lang.set_lang("fr")
+
+-- With callback
+lang.set_lang("es", function()
+	print("When language is loaded, this callback will be called")
+end)
+
+-- Iterate through languages
 lang.set_next_lang()
 ```
-
-Per-call callbacks in `set_lang`, `set_next_lang`, and `load_langs` still work — they run before `lang.on_lang_changed`.
 
 
 ### 4. Add translations at runtime
