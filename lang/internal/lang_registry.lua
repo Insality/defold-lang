@@ -127,7 +127,7 @@ function M.load_lang(lang_id, on_loaded)
 	local async_sources = {}
 
 	for _, source in ipairs(sources) do
-		local _, path_str = lang_internal.get_path_format(source.path)
+		local is_lua, path_str, is_csv, is_json = lang_internal.get_path_format(source.path)
 		if source.loader and path_str then
 			table.insert(async_sources, source)
 		else
@@ -135,7 +135,11 @@ function M.load_lang(lang_id, on_loaded)
 			if lang_table then
 				lang_internal.merge_table(merged, lang_table)
 			elseif source.path then
-				logger:error("Lang format not supported", source.path)
+				if is_lua or is_csv or is_json then
+					logger:error("Failed to load lang file", path_str or source.path)
+				else
+					logger:error("Lang format not supported", source.path)
+				end
 			end
 		end
 	end

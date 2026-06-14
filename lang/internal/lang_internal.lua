@@ -31,7 +31,8 @@ function M.load_json(json_path)
 		return nil
 	end
 
-	return json.decode(resource)
+	local success, result = pcall(json.decode, resource)
+	return success and result or nil
 end
 
 
