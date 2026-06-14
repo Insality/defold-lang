@@ -205,17 +205,23 @@ lang.set_lang("ru")
 ### Quick API Reference
 
 ```lua
+--
+-- Data management
 lang.init(available_langs, [lang_on_start])
 lang.load_langs(pack_id, langs, [on_lang_changed])
 lang.set_lang(lang_id, [on_lang_changed])
-lang.get_lang()
-lang.get_langs()
 lang.set_next_lang([on_lang_changed])
 lang.get_next_lang()
+lang.get_lang()
+lang.get_langs()
+
+-- Get translations
 lang.txt(text_id)
 lang.txp(text_id, ...)
 lang.txr(text_id)
 lang.is_exist(text_id)
+
+-- System
 lang.set_logger([logger])
 lang.reset_state()
 ```
