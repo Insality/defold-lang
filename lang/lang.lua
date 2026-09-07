@@ -83,7 +83,12 @@ function M.load_langs(pack_id, langs, on_lang_changed)
 	end
 
 	lang_registry.add_pack(pack_id, langs)
-	M.set_lang(M.state.lang, on_lang_changed)
+	M.set_lang(M.state.lang, function()
+		logger:info("Lang pack loaded", { pack_id = pack_id, lang = M.state.lang })
+		if on_lang_changed then
+			on_lang_changed()
+		end
+	end)
 end
 
 
@@ -104,7 +109,9 @@ function M.set_lang(lang_id, on_lang_changed)
 	local previous_lang = M.state.lang
 	lang_registry.load_lang(lang_id, function(loaded_lang_id)
 		M.state.lang = loaded_lang_id
-		logger:info("Lang changed", { previous_lang = previous_lang, lang = loaded_lang_id })
+		if previous_lang ~= loaded_lang_id then
+			logger:info("Lang changed", { previous_lang = previous_lang, lang = loaded_lang_id })
+		end
 		if on_lang_changed then
 			on_lang_changed()
 		end
